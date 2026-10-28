@@ -6,6 +6,11 @@ on:
     - cron: "*/5 13-21 * * 1-5"
     - cron: "0 22 * * 1-5"
   workflow_dispatch:
+  # workflow_dispatch is blocked for the integration token, so pushing this file or the quote script starts a run.
+  push:
+    paths:
+      - .github/workflows/prices.yml
+      - scripts/update-prices.mjs
 
 permissions:
   contents: write
