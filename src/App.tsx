@@ -39,11 +39,14 @@ const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 const col = (n: number) => (n >= 0 ? C.green : C.red);
 const TODAY = "2026-10-28";
 
+const sans = "'Geist Variable', ui-sans-serif, system-ui, sans-serif";
+const mono = "'Geist Mono Variable', ui-monospace, monospace";
 const card: CSSProperties = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16 };
 const lbl: CSSProperties = { fontSize: 11, letterSpacing: "0.08em", color: C.sub, textTransform: "uppercase", fontWeight: 600 };
-const inp: CSSProperties = { background: C.card2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 9px", fontSize: 14, width: "100%", boxSizing: "border-box" };
+const inp: CSSProperties = { background: C.card2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 9px", fontSize: 14, width: "100%", boxSizing: "border-box", fontFamily: "inherit" };
 const pill = (fg: string, bg: string): CSSProperties => ({ display: "inline-block", padding: "2px 8px", borderRadius: 999, background: bg, color: fg, fontSize: 11, fontWeight: 600 });
-const btn = (fg: string, bg: string, solid = false): CSSProperties => ({ background: solid ? fg : bg, color: solid ? "#06120a" : fg, border: `1px solid ${fg}55`, borderRadius: 10, padding: "9px 14px", fontWeight: 600, fontSize: 14, cursor: "pointer" });
+const btn = (fg: string, bg: string, solid = false): CSSProperties => ({ background: solid ? fg : bg, color: solid ? "#06120a" : fg, border: `1px solid ${fg}55`, borderRadius: 10, padding: "9px 14px", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" });
+const fig: CSSProperties = { fontFamily: mono, fontVariantNumeric: "tabular-nums" };
 const stageCol = (s: string) => (s === "2" ? [C.green, C.greenBg] : s === "3" ? [C.amber, C.amberBg] : s === "4" ? [C.red, C.redBg] : [C.sub, C.card2]);
 
 type SortK = "tk" | "st" | "lot" | "avg" | "px" | "val" | "dpl" | "dpp" | "plp" | "pl";
@@ -145,7 +148,7 @@ export default function App() {
   const perfBox = (title: string, p: { pl: number; pc: number; inflow: number }, badge?: ReactNode, extra?: ReactNode) => (
     <div style={card}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}><span style={lbl}>{title}</span>{badge}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: col(p.pl), marginTop: 8 }}>{sgn(p.pl, 0)} <span style={{ fontSize: 15 }}>{pct(p.pc)}</span></div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: col(p.pl), marginTop: 8, ...fig }}>{sgn(p.pl, 0)} <span style={{ fontSize: 15 }}>{pct(p.pc)}</span></div>
       {extra}
       <div style={{ fontSize: 12, color: C.sub, marginTop: 8 }}>ℹ yatırılan toplam para {usd(p.inflow, 0)} · kâr = güncel toplam − yatırılan</div>
     </div>
@@ -155,7 +158,7 @@ export default function App() {
   const ath = Math.max(m.deposits, m.total);
 
   return (
-    <div style={{ background: C.bg, color: C.text, minHeight: "100vh", padding: "24px 18px", fontFamily: "inherit", boxSizing: "border-box" }}>
+    <div style={{ background: C.bg, color: C.text, minHeight: "100vh", padding: "24px 18px", fontFamily: sans, boxSizing: "border-box" }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
         <div>
           <div style={{ ...lbl, color: C.blue }}>Haddini Aş · Terminal · Benim Alanım</div>
@@ -167,12 +170,12 @@ export default function App() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
           <div style={card}>
             <div style={lbl}>Toplam Portföy</div>
-            <div style={{ fontSize: 36, fontWeight: 800, marginTop: 6 }}>{usd(m.total)}</div>
+            <div style={{ fontSize: 36, fontWeight: 800, marginTop: 6, ...fig }}>{usd(m.total)}</div>
             <div style={{ color: C.sub, fontSize: 13, marginTop: 4 }}>Hisse {usd(m.stocks, 0)} · Opsiyon $0 · Nakit <span style={{ color: C.amber }}>{usd(m.cash)}</span></div>
           </div>
           <div style={{ ...card, background: m.today >= 0 ? C.greenBg : C.redBg, borderColor: col(m.today) + "55" }}>
             <div style={lbl}>Bugün</div>
-            <div style={{ fontSize: 30, fontWeight: 800, color: col(m.today), marginTop: 6 }}>{sgn(m.today)} · {pct((m.today / m.yday) * 100)}</div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: col(m.today), marginTop: 6, ...fig }}>{sgn(m.today)} · {pct((m.today / m.yday) * 100)}</div>
             <div style={{ color: C.sub, fontSize: 13, marginTop: 4 }}>hisse {sgn(m.today)} · opsiyon $0</div>
           </div>
         </div>
@@ -235,8 +238,8 @@ export default function App() {
                   <td style={{ ...td, textAlign: "left" }}><span style={pill(fg, bg)}>{l}</span>{t.opening ? <span style={{ ...pill(C.sub, C.card2), marginLeft: 4 }}>açılış</span> : null}</td>
                   <td style={{ ...td, textAlign: "left", fontWeight: 600 }}>{t.ticker || "—"}</td>
                   <td style={{ ...td, textAlign: "left", color: C.sub }}>{t.pocket || "Nakit"}</td>
-                  <td style={td}>{t.qty || "—"}</td><td style={td}>{t.price ? usd(t.price, 4) : "—"}</td>
-                  <td style={td}>{usd(t.amount)}</td>
+                  <td style={{ ...td, ...fig }}>{t.qty || "—"}</td><td style={{ ...td, ...fig }}>{t.price ? usd(t.price, 4) : "—"}</td>
+                  <td style={{ ...td, ...fig }}>{usd(t.amount)}</td>
                   <td style={td}>{(t.type === "AL" || t.type === "SAT") && <button style={{ ...btn(C.blue, C.blueBg), padding: "3px 8px", fontSize: 12 }} onClick={() => editTx(t)}>düzelt</button>} <button style={{ ...btn(C.red, C.redBg), padding: "3px 8px", fontSize: 12 }} onClick={() => setTxs(txs.filter((x) => x.id !== t.id))}>sil</button></td>
                 </tr>); })}</tbody>
             </table>
@@ -259,7 +262,7 @@ export default function App() {
             <div style={lbl}>Alt Portföy Dağılımı</div>
             <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
               <thead><tr>{["Cep", "Değer", "Pay"].map((h, i) => <th key={h} style={{ ...lbl, padding: 8, textAlign: i ? "right" : "left", borderBottom: `1px solid ${C.border}` }}>{h}</th>)}</tr></thead>
-              <tbody>{parts.map((p) => <tr key={p.l}><td style={{ ...td, textAlign: "left" }}><span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 9, background: p.c, marginRight: 8 }} />{p.l}</td><td style={td}>{usd(p.v)}</td><td style={td}>{((p.v / m.total) * 100).toFixed(1)}%</td></tr>)}</tbody>
+              <tbody>{parts.map((p) => <tr key={p.l}><td style={{ ...td, textAlign: "left" }}><span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 9, background: p.c, marginRight: 8 }} />{p.l}</td><td style={{ ...td, ...fig }}>{usd(p.v)}</td><td style={{ ...td, ...fig }}>{((p.v / m.total) * 100).toFixed(1)}%</td></tr>)}</tbody>
             </table>
             <div style={{ fontSize: 12, color: C.sub, marginTop: 8 }}>Nakit tek havuzdur, ceplere ayrılmaz.</div>
           </div>
@@ -267,7 +270,7 @@ export default function App() {
             <circle cx={90} cy={90} r={70} fill="none" stroke={C.card2} strokeWidth={22} />
             {arcs.map((a, i) => <path key={i} d={a.d} fill="none" stroke={a.c} strokeWidth={22} />)}
             <text x={90} y={84} textAnchor="middle" fill={C.sub} fontSize={10} fontWeight={600}>TOPLAM</text>
-            <text x={90} y={104} textAnchor="middle" fill={C.text} fontSize={18} fontWeight={800}>${(m.total / 1000).toFixed(0)}K</text>
+            <text x={90} y={104} textAnchor="middle" fill={C.text} fontSize={18} fontWeight={800} style={fig}>${(m.total / 1000).toFixed(0)}K</text>
           </svg>
         </div>
 
@@ -279,18 +282,18 @@ export default function App() {
           </div>
           <svg viewBox="0 0 1200 220" width="100%" style={{ marginTop: 12 }}>
             {[0, 1, 2, 3].map((i) => <line key={i} x1={60} x2={1170} y1={20 + i * 60} y2={20 + i * 60} stroke={C.border} />)}
-            {[[32000, 20], [21000, 110], [10000, 200]].map(([v, y]) => <text key={v} x={52} y={y + 4} textAnchor="end" fill={C.sub} fontSize={12}>${v / 1000}K</text>)}
+            {[[32000, 20], [21000, 110], [10000, 200]].map(([v, y]) => <text key={v} x={52} y={y + 4} textAnchor="end" fill={C.sub} fontSize={12} style={fig}>${v / 1000}K</text>)}
             {(() => { const y = (v: number) => 200 - ((v - 10000) / 22000) * 180; const x0 = 60, x1 = 1170; const y0v = m.deposits; return (<>
               <path d={`M ${x0} ${y(y0v)} L ${x1} ${y(m.total)} L ${x1} 200 L ${x0} 200 Z`} fill={C.green} opacity={0.12} />
               <line x1={x0} y1={y(y0v)} x2={x1} y2={y(m.total)} stroke={C.green} strokeWidth={2.5} />
               <circle cx={x0} cy={y(y0v)} r={5} fill={C.green} /><circle cx={x1} cy={y(m.total)} r={5} fill={C.green} />
-              <text x={x0 + 8} y={y(y0v) - 10} fill={C.text} fontSize={13}>Yatırılan {usd(y0v, 0)}</text>
-              <text x={x1 - 8} y={y(m.total) - 12} textAnchor="end" fill={C.text} fontSize={13}>28 Eki {usd(m.total, 0)}</text></>); })()}
+              <text x={x0 + 8} y={y(y0v) - 10} fill={C.text} fontSize={13} style={fig}>Yatırılan {usd(y0v, 0)}</text>
+              <text x={x1 - 8} y={y(m.total) - 12} textAnchor="end" fill={C.text} fontSize={13} style={fig}>28 Eki {usd(m.total, 0)}</text></>); })()}
           </svg>
           <div style={{ fontSize: 12, color: C.sub }}>Çizgi: yatırılan toplam para ile bugünkü toplam değer arasındadır. Ara günler uydurulmadı.</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 14 }}>
             {[["Şimdi", usd(m.total), C.text], ["Yatırılan para", usd(m.deposits, 0), C.text], ["Kâr/Zarar (yatırılana göre)", `${sgn(chartPl.pl, 0)} · ${pct(chartPl.pc)}`, col(chartPl.pl)], ["ATH'den uzaklık", pct(((m.total - ath) / ath) * 100), m.total >= ath ? C.green : C.red]].map(([l, v, c]) => (
-              <div key={l} style={{ ...card, background: C.card2 }}><div style={lbl}>{l}</div><div style={{ fontSize: 20, fontWeight: 700, color: c, marginTop: 6 }}>{v}</div></div>))}
+              <div key={l} style={{ ...card, background: C.card2 }}><div style={lbl}>{l}</div><div style={{ fontSize: 20, fontWeight: 700, color: c, marginTop: 6, ...fig }}>{v}</div></div>))}
           </div>
         </div>
 
@@ -300,13 +303,13 @@ export default function App() {
           {showTx && <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>{txSorted.slice(0, 10).map((t) => { const [l, fg, bg] = typeLbl[t.type]; return (
             <div key={t.id} style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", fontSize: 13, padding: "6px 0", borderBottom: `1px solid ${C.border}` }}>
               <span style={{ color: C.sub, width: 50 }}>{fmtD(t.date)}</span><span style={pill(fg, bg)}>{l}</span>
-              <b>{t.ticker}</b>{t.qty ? <span>{t.qty} × {usd(t.price, 2)}</span> : null}<span style={{ marginLeft: "auto" }}>{usd(t.amount)}</span>
+              <b>{t.ticker}</b>{t.qty ? <span style={fig}>{t.qty} × {usd(t.price, 2)}</span> : null}<span style={{ marginLeft: "auto", ...fig }}>{usd(t.amount)}</span>
             </div>); })}</div>}
         </div>
 
         {/* P1 Yatırım */}
         <div style={card}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}><span style={{ fontSize: 17, fontWeight: 700 }}>P1 Yatırım</span><span style={pill(C.green, C.greenBg)}>{m.rows.length} pozisyon</span><span style={{ color: C.sub, fontSize: 13 }}>{usd(m.stocks)}</span></div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}><span style={{ fontSize: 17, fontWeight: 700 }}>P1 Yatırım</span><span style={pill(C.green, C.greenBg)}>{m.rows.length} pozisyon</span><span style={{ color: C.sub, fontSize: 13, ...fig }}>{usd(m.stocks)}</span></div>
           <div style={{ overflowX: "auto", marginTop: 10 }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>{th("tk", "Hisse", true)}{th("st", "Weinstein")}{th("lot", "Lot")}{th("avg", "Ort. Maliyet")}{th("px", "Bugünkü Fiyat")}{th("val", "Poz. Değeri")}{th("dpl", "Günlük K/Z $")}{th("dpp", "Günlük %")}{th("plp", "K/Z %")}{th("pl", "Anlık K/Z $")}</tr></thead>
@@ -314,20 +317,20 @@ export default function App() {
                 {sorted.map((r) => { const [sf, sb] = stageCol(r.st); return (
                   <tr key={r.tk}>
                     <td style={{ ...td, textAlign: "left" }}><b>{r.tk}</b> <span style={{ color: C.sub, fontSize: 11 }}>{NAMES[r.tk] ?? ""}{r.placeholder ? " · fiyat güncellenmeli" : ""}</span></td>
-                    <td style={td}><select value={r.st} onChange={(e: ChangeEvent<HTMLSelectElement>) => setStage({ ...stage, [r.tk]: e.target.value })} style={{ ...pill(sf, sb), border: "none", cursor: "pointer" }}>{["—", "1", "2", "3", "4"].map((s) => <option key={s} value={s}>{s === "—" ? "—" : "Evre " + s}</option>)}</select></td>
-                    <td style={td}>{r.lot}</td>
-                    <td style={td}>{usd(r.avg)}</td>
-                    <td style={td}><input type="number" step="0.01" value={String(r.px)} onChange={(e: ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); if (!isNaN(v)) { const prev = r.px / (1 + r.dpp / 100); setPx({ ...px, [r.tk]: [v, (v / prev - 1) * 100] }); } }} style={{ ...inp, width: 90, textAlign: "right", padding: "3px 6px" }} /></td>
-                    <td style={td}>{usd(r.val)}</td>
-                    <td style={{ ...td, color: col(r.dpl) }}>{sgn(r.dpl)}</td>
-                    <td style={{ ...td, color: col(r.dpp) }}>{pct(r.dpp)}</td>
-                    <td style={{ ...td, color: col(r.plp) }}>{pct(r.plp)}</td>
-                    <td style={{ ...td, color: col(r.pl) }}>{sgn(r.pl)}</td>
+                    <td style={td}><select value={r.st} onChange={(e: ChangeEvent<HTMLSelectElement>) => setStage({ ...stage, [r.tk]: e.target.value })} style={{ ...pill(sf, sb), border: "none", cursor: "pointer", fontFamily: "inherit" }}>{["—", "1", "2", "3", "4"].map((s) => <option key={s} value={s}>{s === "—" ? "—" : "Evre " + s}</option>)}</select></td>
+                    <td style={{ ...td, ...fig }}>{r.lot}</td>
+                    <td style={{ ...td, ...fig }}>{usd(r.avg)}</td>
+                    <td style={{ ...td, ...fig }}><input type="number" step="0.01" value={String(r.px)} onChange={(e: ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); if (!isNaN(v)) { const prev = r.px / (1 + r.dpp / 100); setPx({ ...px, [r.tk]: [v, (v / prev - 1) * 100] }); } }} style={{ ...inp, width: 90, textAlign: "right", padding: "3px 6px" }} /></td>
+                    <td style={{ ...td, ...fig }}>{usd(r.val)}</td>
+                    <td style={{ ...td, ...fig, color: col(r.dpl) }}>{sgn(r.dpl)}</td>
+                    <td style={{ ...td, ...fig, color: col(r.dpp) }}>{pct(r.dpp)}</td>
+                    <td style={{ ...td, ...fig, color: col(r.plp) }}>{pct(r.plp)}</td>
+                    <td style={{ ...td, ...fig, color: col(r.pl) }}>{sgn(r.pl)}</td>
                   </tr>); })}
                 <tr style={{ fontWeight: 700 }}>
                   <td style={{ ...td, textAlign: "left" }}>TOPLAM</td><td style={td} /><td style={td} /><td style={td} /><td style={td} />
-                  <td style={td}>{usd(tot.val)}</td><td style={{ ...td, color: col(tot.dpl) }}>{sgn(tot.dpl)}</td><td style={{ ...td, color: col(tot.dpl) }}>{pct((tot.dpl / (tot.val - tot.dpl)) * 100)}</td>
-                  <td style={{ ...td, color: col(tot.pl) }}>{pct((tot.pl / tot.inv) * 100)}</td><td style={{ ...td, color: col(tot.pl) }}>{sgn(tot.pl)}</td>
+                  <td style={{ ...td, ...fig }}>{usd(tot.val)}</td><td style={{ ...td, ...fig, color: col(tot.dpl) }}>{sgn(tot.dpl)}</td><td style={{ ...td, ...fig, color: col(tot.dpl) }}>{pct((tot.dpl / (tot.val - tot.dpl)) * 100)}</td>
+                  <td style={{ ...td, ...fig, color: col(tot.pl) }}>{pct((tot.pl / tot.inv) * 100)}</td><td style={{ ...td, ...fig, color: col(tot.pl) }}>{sgn(tot.pl)}</td>
                 </tr>
               </tbody>
             </table>
