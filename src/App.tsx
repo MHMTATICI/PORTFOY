@@ -19,6 +19,7 @@ const RAW: [string, string, number, number][] = [
   ["2026-10-22","NVDA",2,212.44],["2026-10-22","IBIT",10,46.156],["2026-10-22","MU",2,863.18],["2026-10-22","META",1,642.90],["2026-10-22","SPCX",2,145.90],
   ["2026-10-23","RKLB",10,51.61],["2026-10-23","CRDO",4,152.825],["2026-10-23","NVDA",4,213.325],["2026-10-23","NBIS",6,160.7717],["2026-10-23","IBIT",8,46.3925],["2026-10-23","BE",4,193.525],["2026-10-23","BE",4,203.545],
   ["2026-10-27","MU",1,932.65],["2026-10-27","TLT",2,82.65],["2026-10-27","META",1,625.60],["2026-10-27","CLS",4,274.6325],["2026-10-27","VGIT",3,58.07],["2026-10-27","NVDA",3,218.72],["2026-10-27","GLD",2,372.90],["2026-10-27","FTGC",16,30.54],["2026-10-27","ARKK",3,85.34],["2026-10-27","VOO",3,708.7733],["2026-10-27","SPMO",2,143.63],["2026-10-27","BSV",3,77.46],["2026-10-27","QQQ",1,722.50],
+  ["2026-10-28","NVDA",4,216],["2026-10-28","MU",1,981.9],["2026-10-28","BE",5,228.1],
 ];
 function initial(): Tx[] {
   const t: Tx[] = [
@@ -26,11 +27,12 @@ function initial(): Tx[] {
     { id: 2, date: "2026-10-22", type: "YATIRMA", ticker: "", qty: 0, price: 0, amount: 10000, pocket: "" },
     { id: 3, date: "2026-10-22", type: "TEMETTU", ticker: "SOLZ", qty: 0, price: 0, amount: 0.16, pocket: "", note: "SOLZ temettü" },
     { id: 4, date: "2026-10-27", type: "YATIRMA", ticker: "", qty: 0, price: 0, amount: 10000, pocket: "" },
+    { id: 5, date: "2026-10-28", type: "YATIRMA", ticker: "", qty: 0, price: 0, amount: 5000, pocket: "" },
   ];
   RAW.forEach((r, i) => t.push({ id: 10 + i, date: r[0], type: "AL", ticker: r[1], qty: r[2], price: r[3], amount: r[2] * r[3], pocket: "P1 Yatırım" }));
   return t;
 }
-const KEY = "alanim-v2";
+const KEY = "alanim-v3";
 function load<T>(k: string, d: T): T { try { const s = window.localStorage.getItem(k); return s ? (JSON.parse(s) as T) : d; } catch { return d; } }
 function save(k: string, v: unknown) { try { window.localStorage.setItem(k, JSON.stringify(v)); } catch { /* yok */ } }
 
@@ -401,7 +403,7 @@ export default function App() {
             <li>Nakit = para girişleri + temettüler − alımlar + satışlar (açılış işaretli alımlar düşülmez).</li>
             <li>Ort. maliyet = Σ(adet × fiyat) ÷ Σ adet (alımlar). Anlık K/Z = poz. değeri − yatırılan.</li>
             <li>Önceki kapanış = fiyat ÷ (1 + günlük %). BUGÜN $ = Σ lot × (fiyat − önceki kapanış); Dünkü değer = toplam − BUGÜN $; BUGÜN % = BUGÜN $ ÷ dünkü değer.</li>
-            <li>Toplam Kâr/Zarar = güncel toplam portföy − yatırılan toplam para (para girişleri − çekimler). % = kâr ÷ yatırılan para. Örnek: yatırılan 30.000 $, toplam 30.500 $ ise +500 $, %1,67.</li>
+            <li>Toplam Kâr/Zarar = güncel toplam portföy − yatırılan toplam para (para girişleri − çekimler). % = kâr ÷ yatırılan para. Örnek: yatırılan 35.000 $, toplam 35.500 $ ise +500 $, %1,43.</li>
                       </ul>}
         </div>
 
