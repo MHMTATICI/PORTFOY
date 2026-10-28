@@ -40,13 +40,12 @@ const col = (n: number) => (n >= 0 ? C.green : C.red);
 const TODAY = "2026-10-28";
 
 const sans = "'Geist Variable', ui-sans-serif, system-ui, sans-serif";
-const mono = "'Geist Mono Variable', ui-monospace, monospace";
 const card: CSSProperties = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16 };
 const lbl: CSSProperties = { fontSize: 11, letterSpacing: "0.08em", color: C.sub, textTransform: "uppercase", fontWeight: 600 };
-const inp: CSSProperties = { background: C.card2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 9px", fontSize: 14, width: "100%", boxSizing: "border-box", fontFamily: "inherit" };
+const inp: CSSProperties = { background: C.card2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 9px", fontSize: 14, width: "100%", boxSizing: "border-box", fontFamily: sans };
 const pill = (fg: string, bg: string): CSSProperties => ({ display: "inline-block", padding: "2px 8px", borderRadius: 999, background: bg, color: fg, fontSize: 11, fontWeight: 600 });
-const btn = (fg: string, bg: string, solid = false): CSSProperties => ({ background: solid ? fg : bg, color: solid ? "#06120a" : fg, border: `1px solid ${fg}55`, borderRadius: 10, padding: "9px 14px", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" });
-const fig: CSSProperties = { fontFamily: mono, fontVariantNumeric: "tabular-nums" };
+const btn = (fg: string, bg: string, solid = false): CSSProperties => ({ background: solid ? fg : bg, color: solid ? "#06120a" : fg, border: `1px solid ${fg}55`, borderRadius: 10, padding: "9px 14px", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: sans });
+const fig: CSSProperties = { fontFamily: sans, fontVariantNumeric: "tabular-nums" };
 const stageCol = (s: string) => (s === "2" ? [C.green, C.greenBg] : s === "3" ? [C.amber, C.amberBg] : s === "4" ? [C.red, C.redBg] : [C.sub, C.card2]);
 
 type SortK = "tk" | "st" | "lot" | "avg" | "px" | "val" | "dpl" | "dpp" | "plp" | "pl";
@@ -317,7 +316,7 @@ export default function App() {
                 {sorted.map((r) => { const [sf, sb] = stageCol(r.st); return (
                   <tr key={r.tk}>
                     <td style={{ ...td, textAlign: "left" }}><b>{r.tk}</b> <span style={{ color: C.sub, fontSize: 11 }}>{NAMES[r.tk] ?? ""}{r.placeholder ? " · fiyat güncellenmeli" : ""}</span></td>
-                    <td style={td}><select value={r.st} onChange={(e: ChangeEvent<HTMLSelectElement>) => setStage({ ...stage, [r.tk]: e.target.value })} style={{ ...pill(sf, sb), border: "none", cursor: "pointer", fontFamily: "inherit" }}>{["—", "1", "2", "3", "4"].map((s) => <option key={s} value={s}>{s === "—" ? "—" : "Evre " + s}</option>)}</select></td>
+                    <td style={td}><select value={r.st} onChange={(e: ChangeEvent<HTMLSelectElement>) => setStage({ ...stage, [r.tk]: e.target.value })} style={{ ...pill(sf, sb), border: "none", cursor: "pointer", fontFamily: sans }}>{["—", "1", "2", "3", "4"].map((s) => <option key={s} value={s}>{s === "—" ? "—" : "Evre " + s}</option>)}</select></td>
                     <td style={{ ...td, ...fig }}>{r.lot}</td>
                     <td style={{ ...td, ...fig }}>{usd(r.avg)}</td>
                     <td style={{ ...td, ...fig }}><input type="number" step="0.01" value={String(r.px)} onChange={(e: ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); if (!isNaN(v)) { const prev = r.px / (1 + r.dpp / 100); setPx({ ...px, [r.tk]: [v, (v / prev - 1) * 100] }); } }} style={{ ...inp, width: 90, textAlign: "right", padding: "3px 6px" }} /></td>
