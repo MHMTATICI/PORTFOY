@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useState, useMemo, useEffect, useGrokTheme } from "./grok-canvas-shim";
 import type { ChangeEvent, CSSProperties, ReactNode } from "./grok-canvas-shim";
 
@@ -38,6 +39,18 @@ const sgn = (n: number, d = 2) => (n >= 0 ? "+" : "") + usd(n, d);
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 const col = (n: number) => (n >= 0 ? C.green : C.red);
 const TODAY = "2026-10-28";
+const FEED_URL = "https://raw.githubusercontent.com/MHMTATICI/PORTFOY/data/prices.json";
+const MONTHS = ["", "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+type Feed = { updatedAt: string; marketState: string; quotes: Record<string, { price: number; prevClose: number }> };
+
+function dubaiStamp(iso: string): { hm: string; label: string } | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Dubai", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  const hm = `${get("hour")}:${get("minute")}`;
+  return { hm, label: `${Number(get("day"))} ${MONTHS[Number(get("month"))]} ${hm}` };
+}
 
 const sans = "'Geist Variable', ui-sans-serif, system-ui, sans-serif";
 const card: CSSProperties = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16 };
@@ -54,6 +67,10 @@ export default function App() {
   useGrokTheme();
   const [txs, setTxs] = useState<Tx[]>(() => load<Tx[]>(KEY + "-tx", initial()));
   const [px, setPx] = useState<Record<string, [number, number]>>(() => load(KEY + "-px", PX0));
+  const [manual, setManual] = useState<string[]>(() => load(KEY + "-ov", [] as string[]));
+  const manualRef = useRef<Set<string>>(new Set());
+  manualRef.current = new Set(manual);
+  const [feed, setFeed] = useState<Feed | null>(null);
   const [stage, setStage] = useState<Record<string, string>>(() => load(KEY + "-st", STAGE0));
   const [sort, setSort] = useState<[SortK, number]>(["val", -1]);
   const [panel, setPanel] = useState<"" | "islem" | "nakit" | "liste" | "sim">("");
@@ -74,7 +91,36 @@ export default function App() {
   const [journal, setJournal] = useState<{ tk: string; k: string; note: string; d: string }[]>(() => load(KEY + "-j", [] as { tk: string; k: string; note: string; d: string }[]));
   const [jTk, setJTk] = useState(""); const [jK, setJK] = useState("Aldım"); const [jNote, setJNote] = useState("");
 
-  useEffect(() => { save(KEY + "-tx", txs); save(KEY + "-px", px); save(KEY + "-st", stage); save(KEY + "-j", journal); }, [txs, px, stage, journal]);
+  useEffect(() => { save(KEY + "-tx", txs); save(KEY + "-px", px); save(KEY + "-st", stage); save(KEY + "-j", journal); save(KEY + "-ov", manual); }, [txs, px, stage, journal, manual]);
+
+  useEffect(() => {
+    let stop = false;
+    const pull = async () => {
+      try {
+        const res = await fetch(`${FEED_URL}?t=${Date.now()}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as Feed;
+        if (stop || !data?.quotes) return;
+        setFeed(data);
+        setPx((cur) => {
+          let changed = false;
+          const next = { ...cur };
+          for (const [tk, q] of Object.entries(data.quotes)) {
+            if (manualRef.current.has(tk) || !(q.price > 0) || !(q.prevClose > 0)) continue;
+            const dp = (q.price / q.prevClose - 1) * 100;
+            const prev = cur[tk];
+            if (prev && Math.abs(prev[0] - q.price) < 1e-6 && Math.abs(prev[1] - dp) < 1e-4) continue;
+            next[tk] = [q.price, dp];
+            changed = true;
+          }
+          return changed ? next : cur;
+        });
+      } catch { /* gömülü fiyatlar kalır */ }
+    };
+    pull();
+    const id = window.setInterval(pull, 60_000);
+    return () => { stop = true; window.clearInterval(id); };
+  }, [manual]);
 
   const m = useMemo(() => {
     let cash = 0, deposits = 0, divs = 0;
@@ -155,6 +201,12 @@ export default function App() {
 
   const chartPl = allFix;
   const ath = Math.max(m.deposits, m.total);
+  const stamp = feed ? dubaiStamp(feed.updatedAt) : null;
+  const live = feed?.marketState === "REGULAR";
+  const extended = feed?.marketState === "PRE" || feed?.marketState === "POST";
+  const chip = !stamp ? "SON KAPANIŞ · 28 Eki 08:32 TSİ" : live ? `CANLI · ${stamp.hm} TSİ` : feed?.marketState === "PRE" ? `ÖN PİYASA · ${stamp.hm} TSİ` : feed?.marketState === "POST" ? `SEANS SONRASI · ${stamp.hm} TSİ` : `SON KAPANIŞ · ${stamp.label} TSİ`;
+  const chipFg = live ? C.green : extended ? C.amber : C.green;
+  const chipBg = live ? C.greenBg : extended ? C.amberBg : C.greenBg;
 
   return (
     <div style={{ background: C.bg, color: C.text, minHeight: "100vh", padding: "24px 18px", fontFamily: sans, boxSizing: "border-box" }}>
@@ -162,7 +214,7 @@ export default function App() {
         <div>
           <div style={{ ...lbl, color: C.blue }}>Haddini Aş · Terminal · Benim Alanım</div>
           <h1 style={{ margin: "6px 0 0", fontSize: 30 }}>Alanım</h1>
-          <div style={{ color: C.sub, fontSize: 13, marginTop: 4 }}>Sayfa aracı kuruma canlı bağlı değildir; fiyatlar elle girilir/düzenlenir. Giriş fiyatı = ENBD booked amount ÷ adet.</div>
+          <div style={{ color: C.sub, fontSize: 13, marginTop: 4 }}>Fiyatlar piyasa açıkken yaklaşık 5 dakikada bir otomatik güncellenir (gecikmeli olabilir). Giriş fiyatı = ENBD booked amount ÷ adet.</div>
         </div>
 
         {/* Özet kutuları */}
@@ -242,7 +294,7 @@ export default function App() {
                   <td style={td}>{(t.type === "AL" || t.type === "SAT") && <button style={{ ...btn(C.blue, C.blueBg), padding: "3px 8px", fontSize: 12 }} onClick={() => editTx(t)}>düzelt</button>} <button style={{ ...btn(C.red, C.redBg), padding: "3px 8px", fontSize: 12 }} onClick={() => setTxs(txs.filter((x) => x.id !== t.id))}>sil</button></td>
                 </tr>); })}</tbody>
             </table>
-            <div style={{ marginTop: 10 }}><button style={btn(C.sub, C.card2)} onClick={() => { setTxs(initial()); setMsg("Ekstre verisine dönüldü."); }}>Ekstre verisine sıfırla</button></div>
+            <div style={{ marginTop: 10 }}><button style={btn(C.sub, C.card2)} onClick={() => { setTxs(initial()); manualRef.current = new Set(); setManual([]); setPx(PX0); setMsg("Ekstre verisine dönüldü."); }}>Ekstre verisine sıfırla</button></div>
           </div>
         )}
 
@@ -253,7 +305,7 @@ export default function App() {
             <div style={{ fontSize: 14 }}>{r ? <>Pozisyon etkisi <b style={{ color: col(d) }}>{sgn(d)}</b> · yeni toplam {usd(m.total + d)} ({pct((d / m.total) * 100)})</> : <span style={{ color: C.sub }}>Portföyde yok</span>}</div>
           </div>); })()}
 
-        <div style={{ ...lbl, display: "flex", gap: 8, alignItems: "center" }}><span style={pill(C.green, C.greenBg)}>SON KAPANIŞ</span> Fiyatlar: 28 Eki 08:32 TSİ</div>
+        <div style={{ ...lbl, display: "flex", gap: 8, alignItems: "center" }}><span>Fiyatlar</span><span style={pill(chipFg, chipBg)}>{chip}</span></div>
 
         {/* Alt portföy dağılımı */}
         <div style={{ ...card, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18, alignItems: "center" }}>
@@ -319,7 +371,7 @@ export default function App() {
                     <td style={td}><select value={r.st} onChange={(e: ChangeEvent<HTMLSelectElement>) => setStage({ ...stage, [r.tk]: e.target.value })} style={{ ...pill(sf, sb), border: "none", cursor: "pointer", fontFamily: sans }}>{["—", "1", "2", "3", "4"].map((s) => <option key={s} value={s}>{s === "—" ? "—" : "Evre " + s}</option>)}</select></td>
                     <td style={{ ...td, ...fig }}>{r.lot}</td>
                     <td style={{ ...td, ...fig }}>{usd(r.avg)}</td>
-                    <td style={{ ...td, ...fig }}><input type="number" step="0.01" value={String(r.px)} onChange={(e: ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); if (!isNaN(v)) { const prev = r.px / (1 + r.dpp / 100); setPx({ ...px, [r.tk]: [v, (v / prev - 1) * 100] }); } }} style={{ ...inp, width: 90, textAlign: "right", padding: "3px 6px" }} /></td>
+                    <td style={{ ...td, ...fig }}><input type="number" step="0.01" value={String(r.px)} onChange={(e: ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); if (!isNaN(v)) { const prev = r.px / (1 + r.dpp / 100); manualRef.current.add(r.tk); setManual((list) => (list.includes(r.tk) ? list : [...list, r.tk])); setPx({ ...px, [r.tk]: [v, prev > 0 ? (v / prev - 1) * 100 : 0] }); } }} style={{ ...inp, width: 90, textAlign: "right", padding: "3px 6px" }} /></td>
                     <td style={{ ...td, ...fig }}>{usd(r.val)}</td>
                     <td style={{ ...td, ...fig, color: col(r.dpl) }}>{sgn(r.dpl)}</td>
                     <td style={{ ...td, ...fig, color: col(r.dpp) }}>{pct(r.dpp)}</td>

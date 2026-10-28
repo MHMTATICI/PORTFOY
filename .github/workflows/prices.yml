@@ -1,0 +1,56 @@
+name: Update prices
+
+on:
+  schedule:
+    # Weekdays, 13:00–21:55 UTC, plus 22:00 UTC. Covers the US cash session in both EDT and EST.
+    - cron: "*/5 13-21 * * 1-5"
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prices-data
+  cancel-in-progress: false
+
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Read previous data branch
+        run: |
+          set -euo pipefail
+          if git fetch origin data; then
+            git show origin/data:prices.json > /tmp/prices.prev.json || rm -f /tmp/prices.prev.json
+          else
+            rm -f /tmp/prices.prev.json
+          fi
+
+      - name: Fetch quotes
+        run: node scripts/update-prices.mjs --previous /tmp/prices.prev.json --out prices.json | tee /tmp/prices.status
+
+      - name: Publish data branch
+        run: |
+          set -euo pipefail
+          status="$(tail -n 1 /tmp/prices.status)"
+          if [ "$status" != "changed" ]; then
+            echo "Quotes unchanged; not committing."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan data-publish
+          git rm -rf --cached .
+          git add -f prices.json
+          test "$(git diff --cached --name-only)" = "prices.json"
+          git commit -m "Update prices"
+          git push --force origin HEAD:data
