@@ -4,8 +4,15 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
+
+if (args.includes("--yield")) {
+  console.log(await shouldYield());
+  process.exit(0);
+}
+
 const previousPath = flag(args, "--previous");
 const outPath = flag(args, "--out") || resolve(root, "prices.json");
+const metaPath = flag(args, "--meta-out");
 
 const tickers = tickersFromApp(readFileSync(resolve(root, "src/App.tsx"), "utf8"));
 if (tickers.length === 0) {
@@ -37,6 +44,8 @@ const next = {
   quotes,
 };
 
+if (metaPath) writeFileSync(metaPath, JSON.stringify({ marketState: next.marketState, updatedAt: next.updatedAt }) + "\n");
+
 const previous = readPrevious(previousPath);
 if (previous && previous.marketState === next.marketState && JSON.stringify(previous.quotes) === JSON.stringify(next.quotes)) {
   console.log("unchanged");
@@ -50,6 +59,39 @@ console.log("changed");
 function flag(argv, name) {
   const i = argv.indexOf(name);
   return i >= 0 ? argv[i + 1] : "";
+}
+
+async function shouldYield() {
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
+  const repo = process.env.GITHUB_REPOSITORY || "";
+  const me = Number(process.env.GITHUB_RUN_ID || 0);
+  if (!token || !repo || !me) {
+    console.error("No Actions run context; this run will fetch.");
+    return "run";
+  }
+  const url = `https://api.github.com/repos/${repo}/actions/workflows/prices.yml/runs?per_page=100`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "portfoy-prices",
+      },
+    });
+    if (!res.ok) {
+      console.error(`Could not list workflow runs (${res.status}); this run will fetch.`);
+      return "run";
+    }
+    const data = await res.json();
+    const others = (data.workflow_runs || []).filter((run) => run.id !== me);
+    if (others.some((run) => run.status === "in_progress")) return "yield";
+    if (others.some((run) => run.status === "queued" && run.id > me)) return "yield";
+    return "run";
+  } catch (error) {
+    console.error(`Could not list workflow runs (${error}); this run will fetch.`);
+    return "run";
+  }
 }
 
 function tickersFromApp(src) {
