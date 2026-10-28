@@ -38,8 +38,6 @@ const sgn = (n: number, d = 2) => (n >= 0 ? "+" : "") + usd(n, d);
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 const col = (n: number) => (n >= 0 ? C.green : C.red);
 const TODAY = "2026-10-28";
-const START = "2026-10-19";
-const START_VAL = 9952;
 
 const card: CSSProperties = { background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16 };
 const lbl: CSSProperties = { fontSize: 11, letterSpacing: "0.08em", color: C.sub, textTransform: "uppercase", fontWeight: 600 };
@@ -55,7 +53,6 @@ export default function App() {
   const [txs, setTxs] = useState<Tx[]>(() => load<Tx[]>(KEY + "-tx", initial()));
   const [px, setPx] = useState<Record<string, [number, number]>>(() => load(KEY + "-px", PX0));
   const [stage, setStage] = useState<Record<string, string>>(() => load(KEY + "-st", STAGE0));
-  const [weekBase, setWeekBase] = useState("10000");
   const [sort, setSort] = useState<[SortK, number]>(["val", -1]);
   const [panel, setPanel] = useState<"" | "islem" | "nakit" | "liste" | "sim">("");
   const [period, setPeriod] = useState("All");
@@ -107,15 +104,7 @@ export default function App() {
     return { cash, deposits, divs, rows, stocks, total, today, yday, inflow, posIn, inv: rows.reduce((s, r) => s + r.inv, 0) };
   }, [txs, px, stage]);
 
-  const perf = (base: number, from: string) => { const pl = m.total - base - m.inflow(from); return { pl, pc: (pl / (base + m.posIn(from))) * 100, inflow: m.inflow(from) }; };
-  const wb = parseFloat(weekBase) || 0;
-  // Hafta (son 5 işlem günü): 21–27 Eki + bugün; başlangıç = 20 Eki kapanışı (tahmini, elle girilir)
-  const week = perf(wb, "2026-10-21");
-  const mtd = perf(START_VAL, START);
-  const all = perf(START_VAL, START);
-  // 19 Eki kayıt başlangıcı: 9,952 (para girişi ilk gün dahil sayılır, platform gibi)
-  const allFix = { pl: m.total - START_VAL - m.inflow("2026-10-20"), pc: 0, inflow: m.inflow("2026-10-20") };
-  allFix.pc = (allFix.pl / (START_VAL + m.posIn("2026-10-20"))) * 100;
+  const allFix = { pl: m.total - m.deposits, pc: m.deposits > 0 ? ((m.total - m.deposits) / m.deposits) * 100 : 0, inflow: m.deposits };
 
   const sorted = [...m.rows].sort((a, b) => { const k = sort[0]; const av = a[k], bv = b[k]; return (typeof av === "string" ? String(av).localeCompare(String(bv)) : (av as number) - (bv as number)) * sort[1]; });
   const tot = { val: m.stocks, dpl: m.today, pl: m.stocks - m.inv, inv: m.inv };
@@ -158,12 +147,12 @@ export default function App() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}><span style={lbl}>{title}</span>{badge}</div>
       <div style={{ fontSize: 22, fontWeight: 700, color: col(p.pl), marginTop: 8 }}>{sgn(p.pl, 0)} <span style={{ fontSize: 15 }}>{pct(p.pc)}</span></div>
       {extra}
-      <div style={{ fontSize: 12, color: C.sub, marginTop: 8 }}>ℹ dönemde net nakit girişi {sgn(Math.round(p.inflow), 0)} — kâra sayılmadı</div>
+      <div style={{ fontSize: 12, color: C.sub, marginTop: 8 }}>ℹ yatırılan toplam para {usd(p.inflow, 0)} · kâr = güncel toplam − yatırılan</div>
     </div>
   );
 
-  const chartPl = period === "1H" ? week : allFix;
-  const ath = Math.max(START_VAL, m.total);
+  const chartPl = allFix;
+  const ath = Math.max(m.deposits, m.total);
 
   return (
     <div style={{ background: C.bg, color: C.text, minHeight: "100vh", padding: "24px 18px", fontFamily: "inherit", boxSizing: "border-box" }}>
@@ -187,11 +176,9 @@ export default function App() {
             <div style={{ color: C.sub, fontSize: 13, marginTop: 4 }}>hisse {sgn(m.today)} · opsiyon $0</div>
           </div>
         </div>
-        <div style={{ color: C.sub, fontSize: 13 }}>Kayıt başlangıcı 19 Eki 2026 {usd(START_VAL, 0)} · Dünkü değer (türetilmiş) {usd(m.yday)}</div>
+        <div style={{ color: C.sub, fontSize: 13 }}>Yatırılan toplam para {usd(m.deposits, 0)} · Dünkü değer (türetilmiş) {usd(m.yday)}</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
-          {perfBox("Hafta (son 5 işlem günü)", week, undefined, <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, fontSize: 12, color: C.sub }}>Başlangıç (20 Eki, tahmini) <input style={{ ...inp, width: 100, padding: "3px 6px" }} value={weekBase} onChange={(e: ChangeEvent<HTMLInputElement>) => setWeekBase(e.target.value)} /></div>)}
-          {perfBox("MTD · Ekim", allFix)}
-          {perfBox("Kayıttan beri", allFix, <span style={pill(C.amber, C.amberBg)}>kayıt 19 Eki 2026'den · 7 gün</span>)}
+          {perfBox("Toplam Kâr/Zarar (yatırılan paraya göre)", allFix)}
         </div>
 
         {/* Butonlar */}
@@ -293,16 +280,16 @@ export default function App() {
           <svg viewBox="0 0 1200 220" width="100%" style={{ marginTop: 12 }}>
             {[0, 1, 2, 3].map((i) => <line key={i} x1={60} x2={1170} y1={20 + i * 60} y2={20 + i * 60} stroke={C.border} />)}
             {[[32000, 20], [21000, 110], [10000, 200]].map(([v, y]) => <text key={v} x={52} y={y + 4} textAnchor="end" fill={C.sub} fontSize={12}>${v / 1000}K</text>)}
-            {(() => { const y = (v: number) => 200 - ((v - 10000) / 22000) * 180; const x0 = 60, x1 = 1170; const y0v = period === "1H" ? wb : START_VAL; return (<>
+            {(() => { const y = (v: number) => 200 - ((v - 10000) / 22000) * 180; const x0 = 60, x1 = 1170; const y0v = m.deposits; return (<>
               <path d={`M ${x0} ${y(y0v)} L ${x1} ${y(m.total)} L ${x1} 200 L ${x0} 200 Z`} fill={C.green} opacity={0.12} />
               <line x1={x0} y1={y(y0v)} x2={x1} y2={y(m.total)} stroke={C.green} strokeWidth={2.5} />
               <circle cx={x0} cy={y(y0v)} r={5} fill={C.green} /><circle cx={x1} cy={y(m.total)} r={5} fill={C.green} />
-              <text x={x0 + 8} y={y(y0v) - 10} fill={C.text} fontSize={13}>{period === "1H" ? "20 Eki (tahmini)" : "19 Eki"} {usd(y0v, 0)}</text>
+              <text x={x0 + 8} y={y(y0v) - 10} fill={C.text} fontSize={13}>Yatırılan {usd(y0v, 0)}</text>
               <text x={x1 - 8} y={y(m.total) - 12} textAnchor="end" fill={C.text} fontSize={13}>28 Eki {usd(m.total, 0)}</text></>); })()}
           </svg>
-          <div style={{ fontSize: 12, color: C.sub }}>Veri noktaları: kayıt başlangıcı ve bugün. Ara günler uydurulmadı; kayıt 7 günlük olduğu için 1A/3A/YTD/All aynı dönemi gösterir.</div>
+          <div style={{ fontSize: 12, color: C.sub }}>Çizgi: yatırılan toplam para ile bugünkü toplam değer arasındadır. Ara günler uydurulmadı.</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 14 }}>
-            {[["Şimdi", usd(m.total), C.text], ["Kayıt başlangıcı", usd(period === "1H" ? wb : START_VAL, 0), C.text], ["Kâr/Zarar (seçili dönem)", `${sgn(chartPl.pl, 0)} · ${pct(chartPl.pc)}`, col(chartPl.pl)], ["ATH'den uzaklık", pct(((m.total - ath) / ath) * 100), m.total >= ath ? C.green : C.red]].map(([l, v, c]) => (
+            {[["Şimdi", usd(m.total), C.text], ["Yatırılan para", usd(m.deposits, 0), C.text], ["Kâr/Zarar (yatırılana göre)", `${sgn(chartPl.pl, 0)} · ${pct(chartPl.pc)}`, col(chartPl.pl)], ["ATH'den uzaklık", pct(((m.total - ath) / ath) * 100), m.total >= ath ? C.green : C.red]].map(([l, v, c]) => (
               <div key={l} style={{ ...card, background: C.card2 }}><div style={lbl}>{l}</div><div style={{ fontSize: 20, fontWeight: 700, color: c, marginTop: 6 }}>{v}</div></div>))}
           </div>
         </div>
@@ -360,9 +347,8 @@ export default function App() {
             <li>Nakit = para girişleri + temettüler − alımlar + satışlar (açılış işaretli alımlar düşülmez).</li>
             <li>Ort. maliyet = Σ(adet × fiyat) ÷ Σ adet (alımlar). Anlık K/Z = poz. değeri − yatırılan.</li>
             <li>Önceki kapanış = fiyat ÷ (1 + günlük %). BUGÜN $ = Σ lot × (fiyat − önceki kapanış); Dünkü değer = toplam − BUGÜN $; BUGÜN % = BUGÜN $ ÷ dünkü değer.</li>
-            <li>Dönem K/Z = şimdiki toplam − başlangıç değeri − dönemdeki net nakit girişi; % = K/Z ÷ (başlangıç + pozitif girişler).</li>
-            <li>Kayıttan beri / MTD: başlangıç 19 Eki = $9,952, sonraki girişler $20,000.16. Hafta: başlangıç 20 Eki kapanışı (bilinmiyor, kutudan girilir).</li>
-          </ul>}
+            <li>Toplam Kâr/Zarar = güncel toplam portföy − yatırılan toplam para (para girişleri − çekimler). % = kâr ÷ yatırılan para. Örnek: yatırılan 30.000 $, toplam 30.500 $ ise +500 $, %1,67.</li>
+                      </ul>}
         </div>
 
         {/* Karar günlüğü */}
@@ -380,3 +366,5 @@ export default function App() {
     </div>
   );
 }
+
+
