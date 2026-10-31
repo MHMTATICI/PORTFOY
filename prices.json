@@ -1,0 +1,90 @@
+{
+  "updatedAt": "2026-10-31T01:09:49.954Z",
+  "marketState": "CLOSED",
+  "quotes": {
+    "ARKK": {
+      "price": 81.12,
+      "prevClose": 85.97
+    },
+    "BE": {
+      "price": 204.6,
+      "prevClose": 222.3
+    },
+    "BSV": {
+      "price": 77.1,
+      "prevClose": 76.91
+    },
+    "CBRS": {
+      "price": 108.769,
+      "prevClose": 115.16
+    },
+    "CLS": {
+      "price": 266.95,
+      "prevClose": 282.75
+    },
+    "CRDO": {
+      "price": 152.0999,
+      "prevClose": 165.29
+    },
+    "FTGC": {
+      "price": 30.12,
+      "prevClose": 30.3
+    },
+    "GLD": {
+      "price": 356.15,
+      "prevClose": 368.57
+    },
+    "IBIT": {
+      "price": 43.698,
+      "prevClose": 45.71
+    },
+    "META": {
+      "price": 614,
+      "prevClose": 624.52
+    },
+    "MU": {
+      "price": 889.2,
+      "prevClose": 934.27
+    },
+    "NBIS": {
+      "price": 155.6862,
+      "prevClose": 171.99
+    },
+    "NVDA": {
+      "price": 205.2499,
+      "prevClose": 213.66
+    },
+    "QQQ": {
+      "price": 692.74,
+      "prevClose": 715.34
+    },
+    "RKLB": {
+      "price": 55,
+      "prevClose": 59.1
+    },
+    "SOLZ": {
+      "price": 9.36,
+      "prevClose": 9.85
+    },
+    "SPCX": {
+      "price": 136.0277,
+      "prevClose": 143.89
+    },
+    "SPMO": {
+      "price": 136.82,
+      "prevClose": 142.4
+    },
+    "TLT": {
+      "price": 81.65,
+      "prevClose": 81.49
+    },
+    "VGIT": {
+      "price": 57.6,
+      "prevClose": 57.5
+    },
+    "VOO": {
+      "price": 695.69,
+      "prevClose": 707.32
+    }
+  }
+}
