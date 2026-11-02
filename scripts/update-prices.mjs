@@ -1,4 +1,4 @@
-// Quote refresh for the data branch. The session loop lives in scripts/poll-prices.sh (started from main).
+// Quote refresh for the data branch. The session loop lives in scripts/poll-prices.sh (started from main; winter open 14:30 UTC).
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
