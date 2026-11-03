@@ -2,16 +2,14 @@ name: Update prices
 
 on:
   schedule:
-    # Backup starts only. GitHub often delays or drops these ticks, so a started run keeps polling itself.
-    # The US cash session opens 13:30 UTC in summer (EDT) and 14:30 UTC in winter (EST).
-    # Standard time began 2026-11-01, so weekday starts are 14:25 and 14:30 UTC,
-    # then every 5 minutes through 22:55 UTC, 23:00 UTC, and every hour 15:00–23:00 UTC.
-    # When daylight time resumes (second Sunday in March), shift this window one hour earlier.
-    - cron: "25,30 14 * * 1-5"
-    - cron: "35,40,45,50,55 14 * * 1-5"
-    - cron: "*/5 15-22 * * 1-5"
+    # GitHub cron is UTC and does not follow US daylight saving time, so both opens are listed.
+    # Regular session: 13:30–20:00 UTC while New York is on EDT, 14:30–21:00 UTC on EST.
+    # A run that starts in premarket keeps polling; a second start exits if a loop is already active.
+    - cron: "25 13 * * 1-5"
+    - cron: "25 14 * * 1-5"
+    - cron: "*/5 13-22 * * 1-5"
     - cron: "0 23 * * 1-5"
-    - cron: "0 15-23 * * 1-5"
+    - cron: "0 13-23 * * 1-5"
   workflow_dispatch:
   # workflow_dispatch is blocked for the integration token, so pushing these files starts a run.
   push:
