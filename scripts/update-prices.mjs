@@ -1,5 +1,5 @@
 // Quote refresh for the data branch. The session loop lives in scripts/poll-prices.sh.
-// Weekday starts cover both cash opens: 13:30 UTC (EDT) and 14:30 UTC (EST).
+// Weekday starts cover both cash opens: 13:30 UTC (EDT) and 14:30 UTC (EST). A push starts the session when cron does not.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
