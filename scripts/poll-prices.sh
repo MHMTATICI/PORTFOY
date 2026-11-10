@@ -1,32 +1,38 @@
 #!/usr/bin/env bash
-# Fetch quotes immediately, then every 3 minutes until the US cash session is over.
-# A start during CLOSED (night or weekend) publishes once and exits.
+# Keep one price run alive. Publish every 3 minutes through the cash session.
+# Outside the session, publish the last close about every 15 minutes and sleep
+# until 09:20 America/New_York on the next weekday that is not an NYSE holiday.
+# A single run stops after about 5h45m so the workflow cap is not what kills it;
+# the final workflow step dispatches the successor.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-decision="$(node scripts/update-prices.mjs --yield)"
-if [ "$decision" = "yield" ]; then
-  echo "Another Update prices run is active or a newer run is queued; exiting."
+MODE="${PRICE_MODE:-loop}"
+
+if [ "$MODE" = "dispatch-test" ]; then
+  echo "dispatch-test: leaving prices.json to the live loop and exiting so the final step can hand off only if the chain is down."
   exit 0
 fi
 
-stop_epoch="$(node --input-type=module -e '
-const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "short" }).formatToParts(new Date());
-const tz = parts.find((part) => part.type === "timeZoneName")?.value || "EST";
-const now = new Date();
-const hour = tz === "EDT" ? 21 : 22;
-const stop = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hour, 10, 0);
-console.log(Math.floor(stop / 1000));
-console.error(`session stop ${tz} ${hour}:10 UTC`);
-')"
+decision="$(node scripts/dispatch-next.mjs --check || echo run)"
+if [ "$decision" = "yield" ]; then
+  echo "Another price loop is already running; exiting."
+  exit 0
+fi
+
+# Queue the successor before the long sleep so a killed runner still has one waiting.
+node scripts/dispatch-next.mjs --mode loop || echo "Could not queue the successor yet; the final step will retry."
+if [ "${PRICE_ARM_PROBE:-}" = "1" ]; then
+  node scripts/dispatch-next.mjs --mode dispatch-test || echo "Dispatch test did not start."
+fi
+
 start_epoch="$(date +%s)"
-max_epoch="$((start_epoch + 345 * 60))"
+handoff_at="$((start_epoch + 345 * 60 - 90))"
 seen_session=0
-closed_streak=0
 poll=0
 
 publish_prices() {
-  local tmp origin header
+  local tmp origin header code
   tmp="$(mktemp -d)"
   cp prices.json "$tmp/prices.json"
   git -C "$tmp" init -q -b data-publish
@@ -41,10 +47,18 @@ publish_prices() {
     git -C "$tmp" config http.https://github.com/.extraheader "$header"
   fi
   git -C "$tmp" push --force origin HEAD:data
+  code=$?
   rm -rf "$tmp"
+  return "$code"
 }
 
 while true; do
+  now="$(date +%s)"
+  if [ "$now" -ge "$handoff_at" ]; then
+    echo "Approaching the 5h45m handoff; the final step starts the successor."
+    exit 0
+  fi
+
   poll="$((poll + 1))"
   echo "poll ${poll} $(date -u +%H:%M:%SZ)"
   rm -f /tmp/prices.prev.json /tmp/prices.meta.json /tmp/prices.status
@@ -62,38 +76,42 @@ while true; do
 
   status="$(tail -n 1 /tmp/prices.status)"
   state="$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync("/tmp/prices.meta.json","utf8")).marketState)')"
-  echo "marketState ${state} commit ${status}"
+  cal="$(node scripts/market-calendar.mjs)"
+  phase="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).phase)' "$cal")"
+  next_open="$(node -e 'process.stdout.write(String(JSON.parse(process.argv[1]).nextOpen))' "$cal")"
+  echo "marketState ${state} phase ${phase} commit ${status} nextOpen ${next_open}"
   if [ "$status" = "changed" ]; then
     if ! publish_prices; then
       echo "Publish failed; retrying next poll."
     fi
   fi
-
-  if [ "$state" = "REGULAR" ] || [ "$state" = "POST" ]; then
+  if [ "$phase" = "session" ] || [ "$state" = "REGULAR" ] || [ "$state" = "POST" ] || [ "$state" = "PRE" ]; then
     seen_session=1
-    closed_streak=0
-  elif [ "$state" = "PRE" ]; then
-    closed_streak=0
-  elif [ "$state" = "CLOSED" ]; then
-    if [ "$seen_session" -eq 0 ]; then
-      echo "Market is closed and no regular or post session was seen; one fetch and exit."
-      exit 0
-    fi
-    closed_streak="$((closed_streak + 1))"
-    if [ "$closed_streak" -ge 2 ]; then
-      echo "Market stayed CLOSED for two polls after the session; exit."
-      exit 0
-    fi
+  fi
+  if [ "$seen_session" -eq 1 ] && [ "$phase" != "session" ] && [ "$state" != "PRE" ] && [ "$state" != "REGULAR" ] && [ "$state" != "POST" ]; then
+    echo "Cash session is over; the final step starts the successor."
+    exit 0
   fi
 
   now="$(date +%s)"
-  if [ "$now" -ge "$stop_epoch" ]; then
-    echo "Reached the US session stop; exit."
+  if [ "$phase" = "session" ]; then
+    interval=180
+  else
+    interval=900
+  fi
+  remain="$((handoff_at - now))"
+  if [ "$remain" -le 30 ]; then
+    echo "Approaching the 5h45m handoff; the final step starts the successor."
     exit 0
   fi
-  if [ "$now" -ge "$max_epoch" ]; then
-    echo "Reached the 345 minute limit; exit."
+  sleep_for="$interval"
+  if [ "$sleep_for" -ge "$remain" ]; then
+    echo "The next wait would cross the run cap; handing off."
     exit 0
   fi
-  sleep 180
+  if [ "$phase" != "session" ] && [ "$next_open" -gt "$now" ] && [ "$((next_open - now))" -lt "$sleep_for" ]; then
+    sleep_for="$((next_open - now))"
+  fi
+  echo "sleep ${sleep_for}s"
+  sleep "$sleep_for"
 done
