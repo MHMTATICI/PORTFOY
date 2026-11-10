@@ -59,6 +59,38 @@ const TODAY = "2026-11-10";
 const FEED_URL = "https://raw.githubusercontent.com/MHMTATICI/PORTFOY/data/prices.json";
 const MONTHS = ["", "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 type Feed = { updatedAt: string; marketState: string; quotes: Record<string, { price: number; prevClose: number }> };
+type Pt = { date: string; invested: number; value: number };
+
+function shiftISO(iso: string, days: number, months: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1 + months, d + days));
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+}
+function rangeStart(period: string, asOf: string): string | null {
+  if (period === "YTD") return `${asOf.slice(0, 4)}-01-01`;
+  if (period === "MTD") return `${asOf.slice(0, 7)}-01`;
+  if (period === "1H") return shiftISO(asOf, -7, 0);
+  if (period === "1A") return shiftISO(asOf, 0, -1);
+  if (period === "3A") return shiftISO(asOf, 0, -3);
+  return null;
+}
+function niceStep(span: number): number {
+  const raw = span / 3;
+  const pow = 10 ** Math.floor(Math.log10(Math.max(raw, 1)));
+  const err = raw / pow;
+  const nice = err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
+  return nice * pow;
+}
+function axisMoney(v: number): string {
+  const sign = v < 0 ? "-" : "";
+  const a = Math.abs(v);
+  if (a >= 1000) {
+    const k = a / 1000;
+    const text = k >= 100 || Math.abs(k - Math.round(k)) < 0.05 ? String(Math.round(k)) : k.toFixed(1);
+    return `${sign}$${text}K`;
+  }
+  return `${sign}$${Math.round(a)}`;
+}
 
 function dubaiStamp(iso: string): { hm: string; label: string } | null {
   const d = new Date(iso);
@@ -218,6 +250,48 @@ export default function App() {
 
   const chartPl = allFix;
   const ath = Math.max(m.deposits, m.total);
+  const ledger = useMemo(() => {
+    const ordered = [...txs].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+    const pos: Record<string, { qty: number; bq: number; bc: number }> = {};
+    let cash = 0, deposits = 0;
+    const mark = () => {
+      let stocks = 0;
+      for (const [tk, p] of Object.entries(pos)) {
+        if (p.qty <= 1e-9) continue;
+        stocks += p.qty * (px[tk]?.[0] ?? (p.bq ? p.bc / p.bq : 0));
+      }
+      return stocks + cash;
+    };
+    const points: Pt[] = [];
+    let day = "";
+    const snap = (date: string) => points.push({ date, invested: deposits, value: mark() });
+    for (const t of ordered) {
+      if (day && t.date !== day) snap(day);
+      day = t.date;
+      if (t.type === "YATIRMA") { cash += t.amount; deposits += t.amount; }
+      else if (t.type === "CEKME") { cash -= t.amount; deposits -= t.amount; }
+      else if (t.type === "DUZELT" || t.type === "TEMETTU") cash += t.amount;
+      else if (t.type === "AL") {
+        const p = pos[t.ticker] || (pos[t.ticker] = { qty: 0, bq: 0, bc: 0 });
+        p.qty += t.qty; p.bq += t.qty; p.bc += t.amount;
+        if (!t.opening) cash -= t.amount;
+      } else if (t.type === "SAT") {
+        const p = pos[t.ticker] || (pos[t.ticker] = { qty: 0, bq: 0, bc: 0 });
+        p.qty -= t.qty;
+        cash += t.amount;
+      }
+    }
+    if (day) snap(day);
+    const end = points[points.length - 1];
+    if (!end || end.date !== TODAY) points.push({ date: TODAY, invested: m.deposits, value: m.total });
+    else points[points.length - 1] = { date: TODAY, invested: m.deposits, value: m.total };
+    return points;
+  }, [txs, px, m.deposits, m.total]);
+  const start = rangeStart(period, TODAY);
+  const prior = start ? [...ledger].reverse().find((p) => p.date < start) : undefined;
+  let series = start ? ledger.filter((p) => p.date >= start) : ledger.slice();
+  if (prior && start) series = [{ ...prior, date: start }, ...series];
+  if (series.length === 0) series = [{ date: TODAY, invested: m.deposits, value: m.total }];
   const stamp = feed ? dubaiStamp(feed.updatedAt) : null;
   const live = feed?.marketState === "REGULAR";
   const extended = feed?.marketState === "PRE" || feed?.marketState === "POST";
@@ -346,19 +420,40 @@ export default function App() {
         <div style={card}>
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
             <div style={{ fontSize: 17, fontWeight: 700 }}>Toplam Portföy Performansı</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{["1H", "MTD", "1A", "3A", "YTD", "All"].map((p) => <button key={p} onClick={() => setPeriod(p)} style={{ ...btn(C.blue, period === p ? C.blueBg : C.card2), padding: "4px 10px", fontSize: 12 }}>{p}</button>)}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{["1H", "MTD", "1A", "3A", "YTD", "All"].map((p) => <button key={p} type="button" data-range={p} data-active={period === p ? "true" : "false"} onClick={() => setPeriod(p)} style={{ ...btn(C.blue, C.card2, period === p), padding: "4px 10px", fontSize: 12 }}>{p}</button>)}</div>
           </div>
-          <svg viewBox="0 0 1200 220" width="100%" style={{ marginTop: 12 }}>
-            {[0, 1, 2, 3].map((i) => <line key={i} x1={60} x2={1170} y1={20 + i * 60} y2={20 + i * 60} stroke={C.border} />)}
-            {[[32000, 20], [21000, 110], [10000, 200]].map(([v, y]) => <text key={v} x={52} y={y + 4} textAnchor="end" fill={C.sub} fontSize={12} style={fig}>${v / 1000}K</text>)}
-            {(() => { const y = (v: number) => 200 - ((v - 10000) / 22000) * 180; const x0 = 60, x1 = 1170; const y0v = m.deposits; return (<>
-              <path d={`M ${x0} ${y(y0v)} L ${x1} ${y(m.total)} L ${x1} 200 L ${x0} 200 Z`} fill={C.green} opacity={0.12} />
-              <line x1={x0} y1={y(y0v)} x2={x1} y2={y(m.total)} stroke={C.green} strokeWidth={2.5} />
-              <circle cx={x0} cy={y(y0v)} r={5} fill={C.green} /><circle cx={x1} cy={y(m.total)} r={5} fill={C.green} />
-              <text x={x0 + 8} y={y(y0v) - 10} fill={C.text} fontSize={13} style={fig}>Yatırılan {usd(y0v, 0)}</text>
-              <text x={x1 - 8} y={y(m.total) - 12} textAnchor="end" fill={C.text} fontSize={13} style={fig}>28 Eki {usd(m.total, 0)}</text></>); })()}
+          <svg data-period={period} viewBox="0 0 1200 220" width="100%" style={{ marginTop: 12 }}>
+            {(() => {
+              const x0 = 64, x1 = 1160, yTop = 28, yBot = 188;
+              const ys = series.flatMap((p) => [p.invested, p.value]);
+              let lo = Math.min(...ys), hi = Math.max(...ys);
+              if (!(hi > lo)) { const pad0 = Math.max(Math.abs(hi) * 0.08, 1000); lo -= pad0; hi += pad0; }
+              else { const pad = (hi - lo) * 0.14; lo -= pad; hi += pad; }
+              const y = (v: number) => yBot - ((v - lo) / (hi - lo)) * (yBot - yTop);
+              const step = niceStep(hi - lo);
+              const ticks: number[] = [];
+              for (let v = Math.ceil(lo / step) * step; v <= hi + step * 0.01; v += step) ticks.push(v);
+              const t0 = Date.parse(series[0].date), tN = Date.parse(series[series.length - 1].date);
+              const xOf = (date: string, i: number) => tN === t0 ? x0 + (series.length > 1 ? (i / (series.length - 1)) * (x1 - x0) : (x1 - x0) / 2) : x0 + ((Date.parse(date) - t0) / (tN - t0)) * (x1 - x0);
+              const pts = series.map((p, i) => ({ ...p, x: xOf(p.date, i), yv: y(p.value), yi: y(p.invested) }));
+              const valueLine = pts.map((p, i) => `${i ? "L" : "M"} ${p.x.toFixed(1)} ${p.yv.toFixed(1)}`).join(" ");
+              const area = `${valueLine} L ${pts[pts.length - 1].x.toFixed(1)} ${yBot} L ${pts[0].x.toFixed(1)} ${yBot} Z`;
+              const investedLine = pts.map((p, i) => `${i ? "L" : "M"} ${p.x.toFixed(1)} ${p.yi.toFixed(1)}`).join(" ");
+              const labelY = (yy: number) => (yy < yTop + 16 ? yy + 18 : yy - 8);
+              const a = pts[0], b = pts[pts.length - 1];
+              return (<>
+                {ticks.map((v) => <line key={v} x1={x0} x2={x1} y1={y(v)} y2={y(v)} stroke={C.border} />)}
+                {ticks.map((v) => <text key={`t${v}`} x={x0 - 8} y={y(v) + 4} textAnchor="end" fill={C.sub} fontSize={12} style={fig}>{axisMoney(v)}</text>)}
+                <path d={area} fill={C.green} opacity={0.12} />
+                <path d={investedLine} fill="none" stroke={C.amber} strokeWidth={1.5} strokeDasharray="5 4" />
+                <path d={valueLine} fill="none" stroke={C.green} strokeWidth={2.5} />
+                {pts.map((p) => <circle key={p.date + p.x} cx={p.x} cy={p.yv} r={3.5} fill={C.green} />)}
+                <text x={a.x + 8} y={labelY(a.yv)} fill={C.text} fontSize={13} style={fig}>{fmtD(a.date)} {usd(a.value, 0)}</text>
+                <text x={b.x - 8} y={labelY(b.yv)} textAnchor="end" fill={C.text} fontSize={13} style={fig}>{fmtD(b.date)} {usd(b.value, 0)}</text>
+              </>);
+            })()}
           </svg>
-          <div style={{ fontSize: 12, color: C.sub }}>Çizgi: yatırılan toplam para ile bugünkü toplam değer arasındadır. Ara günler uydurulmadı.</div>
+          <div style={{ fontSize: 12, color: C.sub }}>Seçili aralıktaki defter tarihleri. Yeşil: bugünkü fiyatlarla değer. Kesik sarı: yatırılan para. Ara günler uydurulmadı.</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 14 }}>
             {[["Şimdi", usd(m.total), C.text], ["Yatırılan para", usd(m.deposits, 0), C.text], ["Kâr/Zarar (yatırılana göre)", `${sgn(chartPl.pl, 0)} · ${pct(chartPl.pc)}`, col(chartPl.pl)], ["ATH'den uzaklık", pct(((m.total - ath) / ath) * 100), m.total >= ath ? C.green : C.red]].map(([l, v, c]) => (
               <div key={l} style={{ ...card, background: C.card2 }}><div style={lbl}>{l}</div><div style={{ fontSize: 20, fontWeight: 700, color: c, marginTop: 6, ...fig }}>{v}</div></div>))}
