@@ -101,9 +101,10 @@ function tickersFromApp(src) {
   if (px) {
     for (const match of px[1].matchAll(/\b([A-Z][A-Z0-9.]*)\s*:/g)) found.add(match[1]);
   }
-  for (const match of src.matchAll(/\["\d{4}-\d{2}-\d{2}","([A-Z][A-Z0-9.]*)"/g)) found.add(match[1]);
   return [...found].sort();
 }
+
+// Open holdings only. Sold names stay in the trade history and are not quoted.
 
 function round(n) {
   return Math.round(n * 10000) / 10000;
