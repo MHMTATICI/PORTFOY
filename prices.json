@@ -1,0 +1,122 @@
+{
+  "updatedAt": "2026-11-14T12:16:58.387Z",
+  "marketState": "CLOSED",
+  "quotes": {
+    "ALAB": {
+      "price": 215.05,
+      "prevClose": 227.79
+    },
+    "AMZN": {
+      "price": 264.33,
+      "prevClose": 267.44
+    },
+    "ARKK": {
+      "price": 74.4,
+      "prevClose": 76.5
+    },
+    "AVGO": {
+      "price": 340.3681,
+      "prevClose": 364.36
+    },
+    "BE": {
+      "price": 186.979,
+      "prevClose": 201.93
+    },
+    "BSV": {
+      "price": 76.4585,
+      "prevClose": 76.41
+    },
+    "CBRS": {
+      "price": 106,
+      "prevClose": 97.75
+    },
+    "CLS": {
+      "price": 233.403,
+      "prevClose": 254.03
+    },
+    "CRDO": {
+      "price": 128.0417,
+      "prevClose": 139.81
+    },
+    "ETON": {
+      "price": 64.5,
+      "prevClose": 61.45
+    },
+    "FTGC": {
+      "price": 28.9448,
+      "prevClose": 29.05
+    },
+    "GLD": {
+      "price": 355.7,
+      "prevClose": 354.89
+    },
+    "META": {
+      "price": 637.0077,
+      "prevClose": 623.61
+    },
+    "MSFT": {
+      "price": 522.06,
+      "prevClose": 523
+    },
+    "MU": {
+      "price": 761.2,
+      "prevClose": 798.44
+    },
+    "NBIS": {
+      "price": 112.8,
+      "prevClose": 128.64
+    },
+    "NVDA": {
+      "price": 161.01,
+      "prevClose": 166.19
+    },
+    "QCOM": {
+      "price": 170.9,
+      "prevClose": 177.14
+    },
+    "QQQ": {
+      "price": 674.2585,
+      "prevClose": 688.17
+    },
+    "RKLB": {
+      "price": 59.8729,
+      "prevClose": 64.07
+    },
+    "SNDK": {
+      "price": 865.23,
+      "prevClose": 937.46
+    },
+    "SPCX": {
+      "price": 136.25,
+      "prevClose": 139.94
+    },
+    "SPMO": {
+      "price": 131.64,
+      "prevClose": 134.43
+    },
+    "TEM": {
+      "price": 70.3,
+      "prevClose": 75.89
+    },
+    "TLT": {
+      "price": 79.42,
+      "prevClose": 79.72
+    },
+    "VGIT": {
+      "price": 56.9,
+      "prevClose": 56.95
+    },
+    "VOO": {
+      "price": 689.01,
+      "prevClose": 696
+    },
+    "WULF": {
+      "price": 12.3,
+      "prevClose": 13.04
+    },
+    "WVE": {
+      "price": 3.17,
+      "prevClose": 3.155
+    }
+  }
+}
