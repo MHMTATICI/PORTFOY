@@ -1,0 +1,142 @@
+{
+  "updatedAt": "2026-11-21T06:46:05.719Z",
+  "marketState": "CLOSED",
+  "quotes": {
+    "ALAB": {
+      "price": 186,
+      "prevClose": 211.6
+    },
+    "AMD": {
+      "price": 439.39,
+      "prevClose": 489.19
+    },
+    "AMZN": {
+      "price": 251,
+      "prevClose": 257.37
+    },
+    "ANT": {
+      "price": 87.7902,
+      "prevClose": 97.17
+    },
+    "ARKK": {
+      "price": 65.5,
+      "prevClose": 68.93
+    },
+    "AVGO": {
+      "price": 311.5069,
+      "prevClose": 346.65
+    },
+    "BE": {
+      "price": 145.55,
+      "prevClose": 168.11
+    },
+    "BSV": {
+      "price": 76.91,
+      "prevClose": 76.64
+    },
+    "CBRS": {
+      "price": 85.51,
+      "prevClose": 86.96
+    },
+    "CLS": {
+      "price": 207.027,
+      "prevClose": 240.23
+    },
+    "CRDO": {
+      "price": 103.9175,
+      "prevClose": 117.76
+    },
+    "ETON": {
+      "price": 60.85,
+      "prevClose": 61.36
+    },
+    "FTGC": {
+      "price": 27.845,
+      "prevClose": 27.965
+    },
+    "GLD": {
+      "price": 324.48,
+      "prevClose": 335.18
+    },
+    "META": {
+      "price": 567.5001,
+      "prevClose": 596.22
+    },
+    "MRVL": {
+      "price": 125.7,
+      "prevClose": 138.47
+    },
+    "MSFT": {
+      "price": 489.4871,
+      "prevClose": 498.3
+    },
+    "MU": {
+      "price": 610.599,
+      "prevClose": 690.44
+    },
+    "NBIS": {
+      "price": 84.53,
+      "prevClose": 96.92
+    },
+    "NVDA": {
+      "price": 130.01,
+      "prevClose": 145.98
+    },
+    "QCOM": {
+      "price": 152.9,
+      "prevClose": 162.01
+    },
+    "QQQ": {
+      "price": 617.74,
+      "prevClose": 645.04
+    },
+    "RKLB": {
+      "price": 47.3968,
+      "prevClose": 50.99
+    },
+    "SEZL": {
+      "price": 138.8,
+      "prevClose": 146.33
+    },
+    "SNDK": {
+      "price": 81.4031,
+      "prevClose": 94.395
+    },
+    "SPCX": {
+      "price": 129.5507,
+      "prevClose": 138.43
+    },
+    "SPMO": {
+      "price": 119.71,
+      "prevClose": 124.04
+    },
+    "SPOT": {
+      "price": 578,
+      "prevClose": 583.85
+    },
+    "STAA": {
+      "price": 24.22,
+      "prevClose": 25.03
+    },
+    "TEM": {
+      "price": 54.93,
+      "prevClose": 59.61
+    },
+    "TLT": {
+      "price": 81.0899,
+      "prevClose": 80.35
+    },
+    "VGIT": {
+      "price": 57.66,
+      "prevClose": 57.29
+    },
+    "VOO": {
+      "price": 641.42,
+      "prevClose": 658.01
+    },
+    "WVE": {
+      "price": 2.6,
+      "prevClose": 2.72
+    }
+  }
+}
