@@ -2,15 +2,15 @@ import { useRef } from "react";
 import { useState, useMemo, useEffect, useGrokTheme } from "./grok-canvas-shim";
 import type { ChangeEvent, CSSProperties, ReactNode } from "./grok-canvas-shim";
 
-type Tx = { id: number; date: string; type: "AL" | "SAT" | "YATIRMA" | "CEKME" | "DUZELT" | "TEMETTU"; ticker: string; qty: number; price: number; amount: number; pocket: string; opening?: boolean; note?: string };
+type Tx = { id: number; date: string; type: "AL" | "SAT" | "YATIRMA" | "CEKME" | "DUZELT" | "TEMETTU" | "BOLME"; ticker: string; qty: number; price: number; amount: number; pocket: string; opening?: boolean; note?: string };
 
 const C = { bg: "#070b16", card: "#0e1527", card2: "#121b31", border: "#1f2a44", text: "#e6ebf5", sub: "#8a96b0", green: "#22c55e", red: "#ef4444", amber: "#f59e0b", blue: "#3b82f6", greenBg: "#0f2a1c", amberBg: "#2a210b", redBg: "#2a1111", blueBg: "#0f1d3a" };
 
-const NAMES: Record<string, string> = { NVDA: "NVIDIA", MU: "Micron", NBIS: "Nebius", SPCX: "SpaceX", BE: "Bloom Energy", META: "Meta", CBRS: "Cerebras", RKLB: "Rocket Lab", CRDO: "Credo", CLS: "Celestica", ARKK: "ARK Innovation", VGIT: "Vanguard Orta Vade Hazine", TLT: "iShares 20+ Yıl Hazine", BSV: "Vanguard Kısa Vade Tahvil", GLD: "SPDR Gold", FTGC: "First Trust Emtia", SPMO: "S&P 500 Momentum", QQQ: "Invesco QQQ", VOO: "Vanguard S&P 500", ALAB: "Astera Labs", AMZN: "Amazon", AVGO: "Broadcom", ETON: "Eton Pharmaceuticals", MSFT: "Microsoft", QCOM: "Qualcomm", SNDK: "SanDisk", TEM: "Tempus AI", WULF: "TeraWulf", WVE: "WAVE Life Sciences" };
+const NAMES: Record<string, string> = { NVDA: "NVIDIA", MU: "Micron", NBIS: "Nebius", SPCX: "SpaceX", BE: "Bloom Energy", META: "Meta", CBRS: "Cerebras", RKLB: "Rocket Lab", CRDO: "Credo", CLS: "Celestica", ARKK: "ARK Innovation", VGIT: "Vanguard Orta Vade Hazine", TLT: "iShares 20+ Yıl Hazine", BSV: "Vanguard Kısa Vade Tahvil", GLD: "SPDR Gold", FTGC: "First Trust Emtia", SPMO: "S&P 500 Momentum", QQQ: "Invesco QQQ", VOO: "Vanguard S&P 500", ALAB: "Astera Labs", AMZN: "Amazon", AVGO: "Broadcom", ETON: "Eton Pharmaceuticals", MSFT: "Microsoft", QCOM: "Qualcomm", SNDK: "SanDisk", TEM: "Tempus AI", WULF: "TeraWulf", WVE: "WAVE Life Sciences", AMD: "AMD", ANT: "Anthropic", MRVL: "Marvell", SPOT: "Spotify", STAA: "Staar Surgical", SEZL: "Sezzle", NVDL: "NVDL 2x NVIDIA" };
 
 // Platformda 28 Eki 08:32 TSİ görünen fiyat ve günlük %
-const PX0: Record<string, [number, number]> = { ARKK: [84.78, 3.59], BSV: [76.78, 0.03], CBRS: [119.31, 10.10], CLS: [276.07, 11.93], CRDO: [167.43, 10.77], FTGC: [30.44, -0.49], GLD: [372.28, 1.21], META: [620.19, -1.64], MU: [928.76, 2.77], NBIS: [170.47, 11.22], NVDA: [217.94, 0.90], QQQ: [721.25, 1.27], RKLB: [58.31, 8.34], SPCX: [148.58, 1.14], SPMO: [142.58, 1.44], TLT: [81.63, -0.06], VGIT: [57.38, -0.02], VOO: [707.52, 0.58], BE: [218.50, 7.15], ALAB: [215.32, 0], AMZN: [260.4, 0], AVGO: [324.55, 0], ETON: [57.04, 0], MSFT: [542.06, 0], QCOM: [155.1071, 0], SNDK: [1162.68, 0], TEM: [83.03, 0], WULF: [12.052, 0], WVE: [3.291, 0] };
-const STAGE0: Record<string, string> = { ARKK: "2", BSV: "4", CBRS: "—", CLS: "3", CRDO: "3", FTGC: "2", GLD: "4", META: "3", MU: "2", NBIS: "3", NVDA: "2", QQQ: "2", RKLB: "4", SPCX: "—", SPMO: "3", TLT: "4", VGIT: "4", VOO: "2", BE: "3", ALAB: "—", AMZN: "—", AVGO: "—", ETON: "—", MSFT: "—", QCOM: "—", SNDK: "—", TEM: "—", WULF: "—", WVE: "—" };
+const PX0: Record<string, [number, number]> = { ARKK: [84.78, 3.59], BSV: [76.78, 0.03], CBRS: [119.31, 10.10], CLS: [276.07, 11.93], CRDO: [167.43, 10.77], FTGC: [30.44, -0.49], GLD: [372.28, 1.21], META: [620.19, -1.64], MU: [928.76, 2.77], NBIS: [170.47, 11.22], NVDA: [217.94, 0.90], QQQ: [721.25, 1.27], RKLB: [58.31, 8.34], SPCX: [148.58, 1.14], SPMO: [142.58, 1.44], TLT: [81.63, -0.06], VGIT: [57.38, -0.02], VOO: [707.52, 0.58], BE: [218.50, 7.15], ALAB: [215.32, 0], AMZN: [260.4, 0], AVGO: [324.55, 0], ETON: [57.04, 0], MSFT: [542.06, 0], QCOM: [155.1071, 0], SNDK: [145.335, 0], TEM: [83.03, 0], WVE: [3.291, 0], AMD: [436.05, 0], ANT: [86.2287, 0], MRVL: [155.55, 0], SPOT: [616.5, 0], STAA: [26.905, 0], SEZL: [155.925, 0] };
+const STAGE0: Record<string, string> = { ARKK: "2", BSV: "4", CBRS: "—", CLS: "3", CRDO: "3", FTGC: "2", GLD: "4", META: "3", MU: "2", NBIS: "3", NVDA: "2", QQQ: "2", RKLB: "4", SPCX: "—", SPMO: "3", TLT: "4", VGIT: "4", VOO: "2", BE: "3", ALAB: "—", AMZN: "—", AVGO: "—", ETON: "—", MSFT: "—", QCOM: "—", SNDK: "—", TEM: "—", WVE: "—", AMD: "—", ANT: "—", MRVL: "—", SPOT: "—", STAA: "—", SEZL: "—" };
 
 const RAW: [string, string, number, number][] = [
   ["2026-10-19","VGIT",3,57.72],["2026-10-19","SPMO",2,144.64],["2026-10-19","GLD",1,382.10],["2026-10-19","ARKK",3,83.85],["2026-10-19","TLT",3,80.36],["2026-10-19","BSV",3,77.2667],["2026-10-19","QQQ",2,724.45],["2026-10-19","VOO",3,708.6867],["2026-10-19","FTGC",16,31.2013],["2026-10-19","SOLZ",11,10.5373],
@@ -26,10 +26,22 @@ const RAW: [string, string, number, number][] = [
   ["2026-11-05","QCOM",7,155.1071],["2026-11-05","NVDA",3,185.74],["2026-11-05","BE",5,165.02],["2026-11-05","AMZN",5,260.4],["2026-11-05","NVDA",5,184.294],["2026-11-05","TEM",10,69.91],["2026-11-05","NBIS",5,123.15],["2026-11-05","MU",2,692.035],["2026-11-05","MSFT",1,542.06],
   ["2026-11-06","WVE",100,3.291],["2026-11-06","ETON",10,57.04],
   ["2026-11-09","RKLB",5,58.82],["2026-11-09","ALAB",3,215.32],["2026-11-09","NVDA",5,178.22],["2026-11-09","TEM",5,83.03],["2026-11-09","WULF",50,12.052],
+  ["2026-11-11","TLT",11,80.8764],["2026-11-11","RKLB",10,65.21],["2026-11-11","SPCX",4,144.025],["2026-11-11","ETON",5,69.42],["2026-11-11","AVGO",3,351.11],
+  ["2026-11-12","AMZN",2,270.35],["2026-11-12","SEZL",4,155.925],["2026-11-12","NVDA",6,165.3817],["2026-11-12","STAA",20,26.905],["2026-11-12","NVDL",50,18.3624],["2026-11-12","MU",1,788.1],["2026-11-12","SPCX",3,143.9],["2026-11-12","NBIS",4,127.725],
+  ["2026-11-13","SPOT",1,616.5],["2026-11-13","MRVL",5,155.55],["2026-11-13","SPCX",3,140.8],["2026-11-13","AMD",2,534.495],["2026-11-13","AVGO",2,347.35],["2026-11-13","SPCX",3,140.71],
+  ["2026-11-18","NVDA",5,152.1],
+  ["2026-11-19","AMZN",2,269.66],["2026-11-19","NBIS",5,98.42],["2026-11-19","AMD",2,486.12],["2026-11-19","AVGO",2,359.38],["2026-11-19","TLT",6,80.43],["2026-11-19","SPCX",5,142.72],
+  ["2026-11-20","MU",1,612.1],["2026-11-20","ANT",15,86.2287],["2026-11-20","MU",2,621.435],["2026-11-20","SPCX",4,128.525],["2026-11-20","AMD",2,436.05],
 ];
 const SELLS: [string, string, number, number][] = [
   ["2026-11-05","IBIT",18,43.0722],["2026-11-06","SOLZ",22,8.7582],["2026-11-09","BE",8,193.9062],
+  ["2026-11-11","CLS",3,236.7933],["2026-11-11","CBRS",11,96.7727],["2026-11-11","MU",5,770.548],["2026-11-11","NVDA",20,173.594],["2026-11-11","BE",5,213.5],
+  ["2026-11-12","ETON",5,65.146],
+  ["2026-11-13","WULF",50,12.5176],
+  ["2026-11-18","NVDL",50,15.4386],
 ];
+// ratio: 1 share becomes N. Total cost is unchanged, so the average is divided by N.
+const SPLITS: [string, string, number][] = [["2026-11-20","SNDK",8]];
 function initial(): Tx[] {
   const t: Tx[] = [
     { id: 1, date: "2026-10-19", type: "YATIRMA", ticker: "", qty: 0, price: 0, amount: 10000, pocket: "" },
@@ -42,12 +54,15 @@ function initial(): Tx[] {
     { id: 8, date: "2026-11-04", type: "TEMETTU", ticker: "VGIT", qty: 0, price: 0, amount: 0.83, pocket: "", note: "VGIT temettü" },
     { id: 9, date: "2026-11-05", type: "YATIRMA", ticker: "", qty: 0, price: 0, amount: 10000, pocket: "" },
     { id: 10, date: "2026-11-05", type: "TEMETTU", ticker: "TLT", qty: 0, price: 0, amount: 1.72, pocket: "", note: "TLT faiz" },
+    { id: 11, date: "2026-11-19", type: "YATIRMA", ticker: "", qty: 0, price: 0, amount: 5000, pocket: "" },
+    { id: 12, date: "2026-11-20", type: "YATIRMA", ticker: "", qty: 0, price: 0, amount: 5000, pocket: "" },
   ];
   RAW.forEach((r, i) => t.push({ id: 100 + i, date: r[0], type: "AL", ticker: r[1], qty: r[2], price: r[3], amount: r[2] * r[3], pocket: "P1 Yatırım" }));
   SELLS.forEach((r, i) => t.push({ id: 500 + i, date: r[0], type: "SAT", ticker: r[1], qty: r[2], price: r[3], amount: r[2] * r[3], pocket: "P1 Yatırım" }));
+  SPLITS.forEach((r, i) => t.push({ id: 800 + i, date: r[0], type: "BOLME", ticker: r[1], qty: r[2], price: 0, amount: 0, pocket: "", note: "1→" + r[2] }));
   return t;
 }
-const KEY = "alanim-v4";
+const KEY = "alanim-v5";
 function load<T>(k: string, d: T): T { try { const s = window.localStorage.getItem(k); return s ? (JSON.parse(s) as T) : d; } catch { return d; } }
 function save(k: string, v: unknown) { try { window.localStorage.setItem(k, JSON.stringify(v)); } catch { /* yok */ } }
 
@@ -55,7 +70,7 @@ const usd = (n: number, d = 2) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleStr
 const sgn = (n: number, d = 2) => (n >= 0 ? "+" : "") + usd(n, d);
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 const col = (n: number) => (n >= 0 ? C.green : C.red);
-const TODAY = "2026-11-10";
+const TODAY = "2026-11-21";
 const FEED_URL = "https://raw.githubusercontent.com/MHMTATICI/PORTFOY/data/prices.json";
 const MONTHS = ["", "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 type Feed = { updatedAt: string; marketState: string; quotes: Record<string, { price: number; prevClose: number }> };
@@ -179,16 +194,17 @@ export default function App() {
       if (t.type === "YATIRMA") { cash += t.amount; deposits += t.amount; flows.push({ date: t.date, amt: t.amount }); }
       else if (t.type === "CEKME") { cash -= t.amount; deposits -= t.amount; flows.push({ date: t.date, amt: -t.amount }); }
       else if (t.type === "DUZELT" || t.type === "TEMETTU") { cash += t.amount; if (t.type === "TEMETTU") divs += t.amount; flows.push({ date: t.date, amt: t.amount }); }
+      else if (t.type === "BOLME") { const p = pos[t.ticker]; if (p && t.qty > 0) { p.qty *= t.qty; p.bq *= t.qty; } }
       else {
         const p = pos[t.ticker] || (pos[t.ticker] = { qty: 0, cost: 0, bq: 0, bc: 0 });
         if (t.type === "AL") { p.qty += t.qty; p.cost += t.amount; p.bq += t.qty; p.bc += t.amount; if (!t.opening) cash -= t.amount; }
-        else { const avg = p.bq ? p.bc / p.bq : 0; p.cost -= avg * t.qty; p.qty -= t.qty; cash += t.amount; }
+        else { const avg = p.qty ? p.cost / p.qty : 0; p.cost -= avg * t.qty; p.qty -= t.qty; cash += t.amount; }
       }
     });
     const rows = Object.entries(pos).filter(([, p]) => p.qty > 1e-9).map(([tk, p]) => {
       const [price, dp] = px[tk] ?? [p.bc / p.bq, 0];
       const prev = price / (1 + dp / 100);
-      const avg = p.bc / p.bq;
+      const avg = p.qty ? p.cost / p.qty : 0;
       const val = p.qty * price, inv = avg * p.qty;
       return { tk, st: stage[tk] ?? "—", lot: p.qty, avg, px: price, val, dpl: p.qty * (price - prev), dpp: dp, pl: val - inv, plp: inv ? ((val - inv) / inv) * 100 : 0, inv, placeholder: !px[tk] };
     });
@@ -227,7 +243,7 @@ export default function App() {
   const editTx = (t: Tx) => { if (t.type !== "AL" && t.type !== "SAT") return; setSide(t.type); setFTk(t.ticker); setFQty(String(t.qty)); setFPx(String(t.price)); setFDate(t.date); setFPocket(t.pocket || "P1 Yatırım"); setFOpen(!!t.opening); setFWhy(t.note ?? ""); setEditId(t.id); setPanel("islem"); };
 
   const buyCount = txs.filter((t) => t.type === "AL" || t.type === "SAT").length;
-  const typeLbl: Record<string, [string, string, string]> = { AL: ["ALIM", C.green, C.greenBg], SAT: ["SATIM", C.red, C.redBg], YATIRMA: ["YATIRMA", C.amber, C.amberBg], CEKME: ["ÇEKME", C.amber, C.amberBg], DUZELT: ["DÜZELTME", C.amber, C.amberBg], TEMETTU: ["TEMETTÜ", C.amber, C.amberBg] };
+  const typeLbl: Record<string, [string, string, string]> = { AL: ["ALIM", C.green, C.greenBg], SAT: ["SATIM", C.red, C.redBg], YATIRMA: ["YATIRMA", C.amber, C.amberBg], CEKME: ["ÇEKME", C.amber, C.amberBg], DUZELT: ["DÜZELTME", C.amber, C.amberBg], TEMETTU: ["TEMETTÜ", C.amber, C.amberBg], BOLME: ["BÖLÜNME", C.amber, C.amberBg] };
   const txSorted = [...txs].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   const fmtD = (d: string) => { const [, mo, da] = d.split("-"); return `${parseInt(da)} ${["", "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"][parseInt(mo)]}`; };
 
@@ -254,23 +270,27 @@ export default function App() {
     const ordered = [...txs].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
     const pos: Record<string, { qty: number; bq: number; bc: number }> = {};
     let cash = 0, deposits = 0;
-    const mark = () => {
+    const mark = (date: string) => {
       let stocks = 0;
       for (const [tk, p] of Object.entries(pos)) {
         if (p.qty <= 1e-9) continue;
-        stocks += p.qty * (px[tk]?.[0] ?? (p.bq ? p.bc / p.bq : 0));
+        const later = SPLITS.reduce((f, s) => (s[1] === tk && s[0] > date ? f * s[2] : f), 1);
+        const mkt = px[tk]?.[0];
+        const unit = mkt != null ? mkt * later : (p.bq ? p.bc / p.bq : 0);
+        stocks += p.qty * unit;
       }
       return stocks + cash;
     };
     const points: Pt[] = [];
     let day = "";
-    const snap = (date: string) => points.push({ date, invested: deposits, value: mark() });
+    const snap = (date: string) => points.push({ date, invested: deposits, value: mark(date) });
     for (const t of ordered) {
       if (day && t.date !== day) snap(day);
       day = t.date;
       if (t.type === "YATIRMA") { cash += t.amount; deposits += t.amount; }
       else if (t.type === "CEKME") { cash -= t.amount; deposits -= t.amount; }
       else if (t.type === "DUZELT" || t.type === "TEMETTU") cash += t.amount;
+      else if (t.type === "BOLME") { const p = pos[t.ticker]; if (p && t.qty > 0) { p.qty *= t.qty; p.bq *= t.qty; } }
       else if (t.type === "AL") {
         const p = pos[t.ticker] || (pos[t.ticker] = { qty: 0, bq: 0, bc: 0 });
         p.qty += t.qty; p.bq += t.qty; p.bc += t.amount;
@@ -513,7 +533,7 @@ export default function App() {
             <li>Nakit = para girişleri + temettüler − alımlar + satışlar (açılış işaretli alımlar düşülmez).</li>
             <li>Ort. maliyet = Σ(adet × fiyat) ÷ Σ adet (alımlar). Anlık K/Z = poz. değeri − yatırılan.</li>
             <li>Önceki kapanış = fiyat ÷ (1 + günlük %). BUGÜN $ = Σ lot × (fiyat − önceki kapanış); Dünkü değer = toplam − BUGÜN $; BUGÜN % = BUGÜN $ ÷ dünkü değer.</li>
-            <li>Toplam Kâr/Zarar = güncel toplam portföy − yatırılan toplam para (para girişleri − çekimler). % = kâr ÷ yatırılan para. Örnek: yatırılan 55.000 $, toplam 55.500 $ ise +500 $, %0,91.</li>
+            <li>Toplam Kâr/Zarar = güncel toplam portföy − yatırılan toplam para (para girişleri − çekimler). % = kâr ÷ yatırılan para. Örnek: yatırılan 65.000 $, toplam 65.500 $ ise +500 $, %0,77.</li>
                       </ul>}
         </div>
 

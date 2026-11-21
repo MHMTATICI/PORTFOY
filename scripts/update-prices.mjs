@@ -104,7 +104,7 @@ function tickersFromApp(src) {
   return [...found].sort();
 }
 
-// Open holdings only. Sold names stay in the trade history and are not quoted.
+// Open holdings are the PX0 keys. Sold names stay in the trade history and are not quoted. The list is read from this checkout when a run starts.
 
 function round(n) {
   return Math.round(n * 10000) / 10000;
